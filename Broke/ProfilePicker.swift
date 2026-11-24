@@ -12,14 +12,14 @@ struct ProfilesPicker: View {
     @ObservedObject var profileManager: ProfileManager
     @State private var showAddProfileView = false
     @State private var editingProfile: Profile?
-    
+
     var body: some View {
         VStack {
             Text("Profiles")
                 .font(.headline)
                 .padding(.horizontal)
                 .padding(.top)
-            
+
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 10)], spacing: 10) {
                     ForEach(profileManager.profiles) { profile in
@@ -31,18 +31,19 @@ struct ProfilesPicker: View {
                                 editingProfile = profile
                             }
                     }
-                    
+
                     ProfileCellBase(name: "New...", icon: "plus", appsBlocked: nil, categoriesBlocked: nil, isSelected: false, isDashed: true, hasDivider: false)
                         .onTapGesture {
                             showAddProfileView = true
                         }
                 }
                 .padding(.horizontal, 10)
+                .padding(.top, 2)
             }
-            
+
             Spacer()
-            
-            Text("Long press on a profile to edit...")
+
+            Text("Long press on a profile to edit")
                 .font(.caption2)
                 .foregroundColor(.secondary.opacity(0.7))
                 .padding(.bottom, 8)
@@ -83,7 +84,7 @@ struct ProfileCellBase: View {
                 .font(.caption)
                 .fontWeight(.medium)
                 .lineLimit(1)
-            
+
             if let apps = appsBlocked, let categories = categoriesBlocked {
                 Text("A: \(apps) | C: \(categories)")
                     .font(.system(size: 10))
@@ -91,12 +92,12 @@ struct ProfileCellBase: View {
         }
         .frame(width: 90, height: 90)
         .padding(2)
-        .background(isSelected ? Color.blue.opacity(0.3) : Color.secondary.opacity(0.2))
+        .background(Color("NonBlockingBackground").opacity(0.3))
         .cornerRadius(8)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(
-                    isSelected ? Color.blue : (isDashed ? Color.secondary : Color.clear),
+                    isSelected || isDashed ? Color("NonBlockingForeground").opacity(0.5) : Color.clear,
                     style: StrokeStyle(lineWidth: 2, dash: isDashed ? [5] : [])
                 )
         )

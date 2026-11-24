@@ -15,27 +15,27 @@ struct BrokerView: View {
     @EnvironmentObject private var profileManager: ProfileManager
     @StateObject private var nfcReader = NFCReader()
     private let tagPhrase = "BROKE-IS-GREAT"
-    
+
     @State private var showWrongTagAlert = false
     @State private var showCreateTagAlert = false
     @State private var nfcWriteSuccess = false
-    
+
     private var isBlocking : Bool {
         get {
             return appBlocker.isBlocking
         }
     }
-    
+
     var body: some View {
         NavigationView {
             GeometryReader { geometry in
                 ZStack {
                     VStack(spacing: 0) {
                         blockOrUnblockButton(geometry: geometry)
-                        
+
                         if !isBlocking {
                             Divider()
-                            
+
                             ProfilesPicker(profileManager: profileManager)
                                 .frame(height: geometry.size.height / 2)
                                 .transition(.move(edge: .bottom))
@@ -52,38 +52,43 @@ struct BrokerView: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
-            .alert("Create Broker Tag", isPresented: $showCreateTagAlert) {
+            .alert("Create Tag", isPresented: $showCreateTagAlert) {
                 Button("Create") { createBrokerTag() }
                 Button("Cancel", role: .cancel) { }
             } message: {
-                Text("Do you want to create a new Broker tag?")
+                Text("Do you want to create a new tag?")
             }
             .alert("Tag Creation", isPresented: $nfcWriteSuccess) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text(nfcWriteSuccess ? "Broker tag created successfully!" : "Failed to create Broker tag. Please try again.")
+                Text(nfcWriteSuccess ? "Tag created successfully!" : "Failed to create tag. Please try again.")
             }
         }
         .animation(.spring(), value: isBlocking)
     }
-    
+
     @ViewBuilder
     private func blockOrUnblockButton(geometry: GeometryProxy) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 16) {
             Text(isBlocking ? "Tap to unblock" : "Tap to block")
                 .font(.caption)
                 .opacity(0.75)
                 .transition(.scale)
-            
+
             Button(action: {
                 withAnimation(.spring()) {
-                    scanTag()
+                    if isBlocking {
+                        scanTag()
+                    } else {
+                        blockApps()
+                    }
                 }
             }) {
-                Image(isBlocking ? "RedIcon" : "GreenIcon")
+                Image(systemName: isBlocking ? "archivebox.circle.fill" : "archivebox.circle")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(height: geometry.size.height / 3)
+                    .foregroundColor(isBlocking ? Color("BlockingForeground") : Color("NonBlockingForeground"))
             }
             .transition(.scale)
         }
@@ -92,6 +97,10 @@ struct BrokerView: View {
         .animation(.spring(), value: isBlocking)
     }
     
+    private func blockApps() {
+        appBlocker.toggleBlocking(for: profileManager.currentProfile)
+    }
+
     private func scanTag() {
         nfcReader.scan { payload in
             if payload == tagPhrase {
@@ -103,7 +112,7 @@ struct BrokerView: View {
             }
         }
     }
-    
+
     private var createTagButton: some View {
         Button(action: {
             showCreateTagAlert = true
@@ -112,7 +121,7 @@ struct BrokerView: View {
         }
         .disabled(!NFCNDEFReaderSession.readingAvailable)
     }
-    
+
     private func createBrokerTag() {
         nfcReader.write(tagPhrase) { success in
             nfcWriteSuccess = !success
